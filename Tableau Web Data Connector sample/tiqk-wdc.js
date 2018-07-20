@@ -17,7 +17,8 @@ USAGE
 Requires a TIQK account and a generated TIQK API Key & Secret.
 
 For development and testing TIQK provides subscribers a free Sandbox and API endpoints with
-access and usage limits. API activity on your production account may incur charges.
+access and usage limits. API activity on your production account may incur charges. 
+Contact TIQK to configure your sandbox account first.
 
 
 SECURITY
@@ -48,7 +49,7 @@ Copyright 2018 TIQK Pty Limited. All rights reserved.
 
 (function() {
   // Globals
-  var environmentBaseURL = 'https://public-api.tiqk.io/'; // If testing, use https://stage-api.tiqk.io/v1/ instead to avoid usage charges. Contact TIQK to configure first.
+  var environmentBaseURL = 'https://public-api.tiqk.io/'; // If testing, use https://stage-api.tiqk.io/ instead to avoid audit charges
   var tiqkAPIVersion = 'v1';
   var authURL = environmentBaseURL + tiqkAPIVersion + '/oauth/token';
   var filesURL = environmentBaseURL + tiqkAPIVersion + '/folders?includeFiles=true';
