@@ -1,3 +1,51 @@
+/****************************************************
+
+Sample TIQK Web Data Connector script for Tableau
+========
+
+This WDC script generates an Auth Token and performs a call to obtain the folders list
+from a TIQK organisation's account. It then drills into one of the Team Folders and extracts
+the file list, metadata, and obtains audit results for any audited files in that folder.
+
+The data is saved in a Tableau data structure suitable for further analysis.
+
+The WDC can be used to support live, custom visualisations, mashups, and analysis of TIQK platform data
+in Tableau.
+
+USAGE
+=====
+Requires a TIQK account and a generated TIQK API Key & Secret.
+
+For development and testing TIQK provides subscribers a free Sandbox and API endpoints with
+access and usage limits. API activity on your production account may incur charges.
+
+
+SECURITY
+========
+
+The TIQK API Key and Secret credentials should be treated as passwords and not distributed. 
+Example credentials in this query are not securely stored. We recommend you consult
+the Power Query documentation for advice on how to securely parameterise and store your credentials.
+
+Web data source privacy levels for the TIQK URLs are set to "None" for ease of demonstration. We recommend
+you consult the Power Query documentation for advice on suitable privacy and security settings in any
+live implementation.
+
+
+RESOURCES
+=========
+TIQK API documentation: https://api-docs.tiqk.com
+
+API Terms of Service: https://help.tiqk.io/terms-privacy-security-and-data/tiqk-api-terms-of-service
+
+Tableau Web Data Connector reference: https://tableau.github.io/webdataconnector/#
+
+COPYRIGHT NOTICE
+================
+Copyright 2018 TIQK Pty Limited. All rights reserved.
+
+****************************************************/
+
 (function() {
   // Globals
   var environmentBaseURL = 'https://public-api.tiqk.io/'; // If testing, use https://stage-api.tiqk.io/v1/ instead to avoid usage charges. Contact TIQK to configure first.
