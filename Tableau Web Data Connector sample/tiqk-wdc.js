@@ -26,12 +26,7 @@ SECURITY
 
 The TIQK API Key and Secret credentials should be treated as passwords and not distributed. 
 Example credentials in this query are not securely stored. We recommend you consult
-the Power Query documentation for advice on how to securely parameterise and store your credentials.
-
-Web data source privacy levels for the TIQK URLs are set to "None" for ease of demonstration. We recommend
-you consult the Power Query documentation for advice on suitable privacy and security settings in any
-live implementation.
-
+the Tableau Web Data Connection documentation for advice on how to securely store your credentials.
 
 RESOURCES
 =========
