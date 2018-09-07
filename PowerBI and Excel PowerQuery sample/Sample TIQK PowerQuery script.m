@@ -54,10 +54,12 @@ let
     // Concatenate the organisation's TIQK API Key & Secret, and convert to base64
     
     // If you are using named Query Parameters, use the following string format
-    // (This assumes you have 2 parameters named: APIKey, APISecret)
-    // apiKeySecretConcatenated = #"APIKey" & ":" & #"APISecret",
+    // (This assumes you have 2 parameters already setup in PowerBI named: APIKey, APISecret)
+    apiKeySecretConcatenated = #"APIKey" & ":" & #"APISecret",
     
-    apiKeySecretConcatenated = "<your API Key>" & ":" & "<your API Secret>",
+    // Use the following string format instead if you want to hardcode your APIKey
+    // and APISecret strings into this script (not recommended)
+    //apiKeySecretConcatenated = "<your API Key>" & ":" & "<your API Secret>",
     
     authKey = "Basic " & Binary.ToText(Text.ToBinary(apiKeySecretConcatenated),0),
     url = "https://public-api.tiqk.io/v1/oauth/token",
@@ -81,7 +83,6 @@ let
     // Now that we have a valid AuthToken, make a call to obtain
     // the organisation's list of folders and uploaded files
     // For details on the call and response, see api-docs.tiqk.com
- 
     GetJsonQuery = Web.Contents("https://public-api.tiqk.io/v1/folders?includeFiles=true",
         [
             Headers = [#"Authorization"=AccessTokenHeader]
@@ -101,8 +102,32 @@ let
    
     // Expand the file list into a table for use in PowerBI or Excel
     ConvertToTable = Table.FromList(A_TeamFolder_Files, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
-    ExpandedFileList = Table.ExpandRecordColumn(ConvertToTable, "Column1", {"fileId", "name", "size", "uploadedAt", "lastAuditResult", "lastAuditAt"}, {"file.fileId", "file.name", "file.size", "file.uploadedAt", "file.lastAuditResult", "file.lastAuditAt"})
+    ExpandedFileList = Table.ExpandRecordColumn(ConvertToTable, "Column1", {"fileId", "name", "size", "uploadedAt", "lastAuditResult", "lastAuditAt"}, {"file.fileId", "file.name", "file.size", "file.uploadedAt", "file.lastAuditResult", "file.lastAuditAt"}),
 
+    // Get a comma-separated list of file Ids of those files that have been audited
+    #"Renamed Columns" = Table.RenameColumns(ExpandedFileList,{{"file.fileId", "fileId"}}),
+    #"Added Conditional Column" = Table.AddColumn(#"Renamed Columns", "auditedFileId", each if [file.lastAuditAt] <> null then [fileId] else null),
+    #"Removed Columns" = Table.RemoveColumns(#"Added Conditional Column",{"file.lastAuditAt", "file.lastAuditResult", "file.uploadedAt", "file.size", "file.name", "fileId"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Removed Columns",{{"auditedFileId", type text}}),
+    auditedFileId = #"Changed Type"[auditedFileId],
+    auditedFilesList = Text.Combine(#"auditedFileId", ","),
+
+    // Run a second API call to get the detailed audit results for each of the audited files in the comma-separated list
+    auditUrl = "https://public-api.tiqk.io/v1/audit/results/" & #"auditedFilesList",
+ 
+    GetAuditResultsQuery = Web.Contents(auditUrl,
+        [
+            Headers = [#"Authorization"=AccessTokenHeader]
+        ]
+    ),
+ 
+    auditResults = Json.Document(GetAuditResultsQuery),
+    #"Converted to Table" = Table.FromList(auditResults, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Expanded Column1" = Table.ExpandRecordColumn(#"Converted to Table", "Column1", {"userId", "publisher", "materialType", "duration", "overallStatus", "totalCompliant", "totalNonCompliant", "totalUnknown", "totalAdvice", "riskRating", "auditCategories", "compliantResults", "nonCompliantResults", "unknownResults", "adviceResults", "bid", "createdAt", "publishedDate"}, {"userId", "publisher", "materialType", "duration", "overallStatus", "totalCompliant", "totalNonCompliant", "totalUnknown", "totalAdvice", "riskRating", "auditCategories", "compliantResults", "nonCompliantResults", "unknownResults", "adviceResults", "bid", "createdAt", "publishedDate"}),
+    #"Expanded publisher" = Table.ExpandRecordColumn(#"Expanded Column1", "publisher", {"name", "type", "number"}, {"publisher.name", "publisher.type", "publisher.number"}),
+    #"Expanded materialType" = Table.ExpandRecordColumn(#"Expanded publisher", "materialType", {"id", "code"}, {"materialType.id", "materialType.code"}),
+    
+    // Expand out the Best Interests Duty (BID) results dataset for the returned audit results
+    #"Expanded bid" = Table.ExpandRecordColumn(#"Expanded materialType", "bid", {"highRisk", "mediumRisk", "lowerRisk"}, {"bid.highRisk", "bid.mediumRisk", "bid.lowerRisk"})
 in
-    // Return the file list
-    ExpandedFileList
+    #"Expanded bid"
